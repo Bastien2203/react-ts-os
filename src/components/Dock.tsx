@@ -2,10 +2,10 @@ import {WindowManager} from "../services/WindowManager.ts";
 
 export const Dock = () => {
   const windows = WindowManager.getWindows();
-  const activeWindow = WindowManager.getActiveWindow();
+  const activeWindow = WindowManager.getActiveWindows();
 
   const openWindow = (window: string) => {
-    WindowManager.setActiveWindow(window);
+    WindowManager.addActiveWindow(window);
   }
 
 

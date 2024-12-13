@@ -1,20 +1,29 @@
 import {useEffect, useState} from "react";
-import {Window, WindowManager} from "./services/WindowManager.ts";
+import {ActiveWindow, WindowManager} from "./services/WindowManager.ts";
 import {EventManager} from "./services/EventManager.ts";
 import {WindowLayout} from "./components/WindowLayout.tsx";
 import {Dock} from "./components/Dock.tsx";
+import React from "react";
 
 export const App = () => {
-  const [activeWindow, setActiveWindow] = useState<Window | undefined>(WindowManager.getActiveWindow())
+  const [activeWindows, setActiveWindows] = useState<ActiveWindow[]>(WindowManager.getActiveWindows())
+  const [focusedWindow, setFocusedWindow] = useState<ActiveWindow | null>(null)
 
   useEffect(() => {
-    EventManager.on("windowChanged", (window: Window) => {
-      setActiveWindow(window)
+    EventManager.on("windowAdded", (window: ActiveWindow) => {
+      setActiveWindows((prev) => [...prev, window])
+      setFocusedWindow(window)
+    });
+    EventManager.on("windowRemoved", (id: string) => {
+      if (focusedWindow?.id === id) {
+        setFocusedWindow(null)
+      }
+      setActiveWindows((prev) => prev.filter((w) => w.id !== id))
     });
   }, []);
 
-  const closeWindow = () => {
-    WindowManager.setActiveWindow()
+  const closeWindow = (id: string) => {
+    WindowManager.removeActiveWindow(id)
   }
 
   return <div className="h-screen w-screen bg-gradient-to-br from-gray-800 to-gray-900 flex">
@@ -22,13 +31,16 @@ export const App = () => {
       <Dock/>
     </div>
 
-    <div className="h-full w-full flex items-center justify-center">
+    <div className="h-full w-full relative">
       {
-        activeWindow && (
-          <WindowLayout title={activeWindow.title} closeWindow={closeWindow}>
-            {activeWindow.component && <activeWindow.component/>}
-          </WindowLayout>
-        )
+        activeWindows.map((activeWindows) =>
+          (
+            <React.Fragment key={activeWindows.id}>
+              <WindowLayout title={activeWindows.title} closeWindow={() => closeWindow(activeWindows.id)} zIndex={focusedWindow?.id === activeWindows.id ? 1 : 0} setFocus={() => setFocusedWindow(activeWindows)}>
+                {activeWindows.component && <activeWindows.component/>}
+              </WindowLayout>
+            </React.Fragment>
+          ))
       }
     </div>
 

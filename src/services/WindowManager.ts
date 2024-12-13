@@ -1,15 +1,19 @@
 import {EventManager} from "./EventManager.ts";
 import Terminal from "../components/windows/Terminal.tsx";
 import {Editor} from "../components/windows/Editor.tsx";
-import { IoTerminal } from "react-icons/io5";
-import { IoDocumentText } from "react-icons/io5";
-
+import {IoTerminal} from "react-icons/io5";
+import {IoDocumentText} from "react-icons/io5";
 
 
 export interface Window {
   component: any;
   title: string;
   icon: any;
+}
+
+
+export interface ActiveWindow extends Window {
+  id: string;
 }
 
 export class WindowManager {
@@ -29,9 +33,9 @@ export class WindowManager {
     },
   }
 
-  private static activeWindow?: Window = WindowManager.windows["terminal"];
+  private static activeWindow: ActiveWindow[] = [];
 
-  static getActiveWindow() {
+  static getActiveWindows() {
     return this.activeWindow;
   }
 
@@ -39,15 +43,17 @@ export class WindowManager {
     return this.windows;
   }
 
-  static setActiveWindow(window?: string) {
-    if (!window) {
-      this.activeWindow = undefined;
-      EventManager.emit("windowChanged", undefined);
-      return;
-
+  static addActiveWindow(window: string) {
+    const newWindow = {
+      id: window + Date.now().toString(),
+      ...this.windows[window]
     }
-    const newWindow = this.windows[window];
-    EventManager.emit("windowChanged", newWindow);
-    this.activeWindow = newWindow;
+    EventManager.emit("windowAdded", newWindow);
+    this.activeWindow.push(newWindow);
+  }
+
+  static removeActiveWindow(id: string) {
+    EventManager.emit("windowRemoved", id);
+    this.activeWindow = this.activeWindow.filter((w) => w.id !== id);
   }
 }
