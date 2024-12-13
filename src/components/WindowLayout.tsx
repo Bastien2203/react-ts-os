@@ -59,6 +59,7 @@ export const WindowLayout = (props: PropsWithChildren<WindowLayoutProps>) => {
     };
   }, [isDragging]);
 
+
   return (
     <div className="h-[70%] w-[90%] max-w-[1000px] rounded overflow-clip absolute"
          onMouseDown={props.setFocus}
