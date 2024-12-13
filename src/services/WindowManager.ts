@@ -3,6 +3,8 @@ import Terminal from "../components/windows/Terminal.tsx";
 import {Editor} from "../components/windows/Editor.tsx";
 import {IoTerminal} from "react-icons/io5";
 import {IoDocumentText} from "react-icons/io5";
+import {MdMonitorHeart} from "react-icons/md";
+import {ActivityMonitor} from "../components/windows/ActivityMonitor.tsx";
 
 
 export interface Window {
@@ -17,10 +19,11 @@ export interface ActiveWindow extends Window {
 }
 
 export class WindowManager {
+  constructor(public eventManager: EventManager) {
 
-  static primaryColor: string = "#979797";
+  }
 
-  private static windows: { [key: string]: Window } = {
+  private windows: { [key: string]: Window } = {
     "terminal": {
       component: Terminal,
       title: "Terminal",
@@ -31,29 +34,34 @@ export class WindowManager {
       title: "Editor",
       icon: IoDocumentText
     },
+    "activityMonitor": {
+      component: ActivityMonitor,
+      title: "Activity Monitor",
+      icon: MdMonitorHeart
+    }
   }
 
-  private static activeWindow: ActiveWindow[] = [];
+  private activeWindow: ActiveWindow[] = [];
 
-  static getActiveWindows() {
+  getActiveWindows() {
     return this.activeWindow;
   }
 
-  static getWindows() {
+  getWindows() {
     return this.windows;
   }
 
-  static addActiveWindow(window: string) {
+  addActiveWindow(window: string) {
     const newWindow = {
-      id: window + Date.now().toString(),
+      id: window + Date.now().toString() + Math.random().toString(),
       ...this.windows[window]
     }
-    EventManager.emit("windowAdded", newWindow);
+    this.eventManager.emit("windowAdded", newWindow);
     this.activeWindow.push(newWindow);
   }
 
-  static removeActiveWindow(id: string) {
-    EventManager.emit("windowRemoved", id);
+  removeActiveWindow(id: string) {
+    this.eventManager.emit("windowRemoved", id);
     this.activeWindow = this.activeWindow.filter((w) => w.id !== id);
   }
 }

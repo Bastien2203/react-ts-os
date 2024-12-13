@@ -14,7 +14,7 @@ export interface ErrorOutput {
   output: string;
 }
 
-export class Command {
+export class CommandManager {
   static commands: { [key: string]: any } = {
     "ls": {
       command: this.ls,
@@ -58,38 +58,41 @@ export class Command {
     }
   };
 
-  private static user = "user1";
-  private static host = "localhost";
-  private static currentdir = "/";
+  constructor(public eventManager: EventManager) {
+  }
 
-  static getUser() {
+  private user = "user1";
+  private host = "localhost";
+  private currentdir = "/";
+
+  getUser() {
     return this.user;
   }
 
-  static getHost() {
+  getHost() {
     return this.host;
   }
 
-  static getCurrentDir() {
+  getCurrentDir() {
     return this.currentdir;
   }
 
-  static changeUser(value: string) {
-    EventManager.emit("userChanged", value);
+  changeUser(value: string) {
+    this.eventManager.emit("userChanged", value);
     this.user = value;
   }
 
-  static changeHost(value: string) {
-    EventManager.emit("hostChanged", value);
+  changeHost(value: string) {
+    this.eventManager.emit("hostChanged", value);
     this.host = value;
   }
 
-  static changeCurrentDir(value: string) {
-    EventManager.emit("currentdirChanged", value);
+  changeCurrentDir(value: string) {
+    this.eventManager.emit("currentdirChanged", value);
     this.currentdir = value;
   }
 
-  static exec(cmd: string): OutputType {
+  exec(cmd: string): OutputType {
     if (cmd === "") {
       return;
     }
@@ -115,7 +118,7 @@ export class Command {
       if (redirectParts[0] === ">" || redirectParts[0] === ">>") {
         let path = redirectParts[1];
         if (!path.startsWith("/")) {
-          path = `${Command.currentdir}${path}`;
+          path = `${this.currentdir}${path}`;
         }
         const output = this.execCommand(command, args);
 
@@ -149,14 +152,14 @@ export class Command {
       }
     }
 
-    if (this.commands[command]) {
+    if (CommandManager.commands[command]) {
       return this.execCommand(command, args);
     } else {
       let path = command;
       if (!path?.startsWith("/")) {
-        path = `${Command.currentdir}${path}`;
+        path = `${this.currentdir}${path}`;
       }
-      try{
+      try {
         const file = FileManager.getFile(path);
         if (file.type === "file") {
           const content = file.content;
@@ -192,25 +195,25 @@ export class Command {
     }
   }
 
-  static execCommand(command: string, args: string[]): OutputType {
+  execCommand(command: string, args: string[]): OutputType {
     if (args[args.length - 1] === "-h" || args[args.length - 1] === "--help") {
       return {
         type: "standard",
-        output: this.commands[command].help
+        output: CommandManager.commands[command].help
       }
     }
 
-    return this.commands[command].command(args);
+    return CommandManager.commands[command].command(this, args);
   }
 
 
-  static ls(args: string[]): OutputType {
+  static ls(that: CommandManager, args: string[]): OutputType {
     try {
       const showPermission = args.includes("-l");
       const argsWithoutFlag = args.filter(arg => arg !== "-l");
-      let path = argsWithoutFlag[0] || Command.currentdir;
+      let path = argsWithoutFlag[0] || that.currentdir;
       if (!path.startsWith("/")) {
-        path = `${Command.currentdir}${path}`;
+        path = `${that.currentdir}${path}`;
       }
 
       const directory = FileManager.getFile(path);
@@ -240,18 +243,18 @@ export class Command {
     }
   }
 
-  static cd(args: string[]): OutputType {
+  static cd(that: CommandManager, args: string[]): OutputType {
     try {
       let path = args[0] || "/";
 
       if (path === "..") {
-        const segments = Command.currentdir.split("/").filter(segment => segment !== "");
+        const segments = that.currentdir.split("/").filter(segment => segment !== "");
         segments.pop();
         path = `/${segments.join("/")}`;
       }
 
       if (!path.startsWith("/")) {
-        path = `${Command.currentdir}${path}`;
+        path = `${that.currentdir}${path}`;
       }
 
       const directory = FileManager.getFile(path);
@@ -261,7 +264,7 @@ export class Command {
           output: `cd: ${path}: Not a directory`
         }
       }
-      Command.changeCurrentDir(path === "/" ? path : `${path}/`);
+      that.changeCurrentDir(path === "/" ? path : `${path}/`);
       return;
     } catch (e: any) {
       return {
@@ -271,14 +274,14 @@ export class Command {
     }
   }
 
-  static pwd(): OutputType {
+  static pwd(that: CommandManager): OutputType {
     return {
       type: "standard",
-      output: Command.currentdir
+      output: that.currentdir
     }
   }
 
-  static mkdir(args: string[]): OutputType {
+  static mkdir(that: CommandManager, args: string[]): OutputType {
     try {
       if (args.length === 0) {
         return {
@@ -286,7 +289,7 @@ export class Command {
           output: "mkdir: missing operand"
         }
       }
-      const path = `${Command.currentdir}/${args[0]}`;
+      const path = `${that.currentdir}/${args[0]}`;
       FileManager.createDirectory(path);
       return;
     } catch (e: any) {
@@ -297,7 +300,7 @@ export class Command {
     }
   }
 
-  static touch(args: string[]): OutputType {
+  static touch(that: CommandManager, args: string[]): OutputType {
     try {
       if (args.length === 0) {
         return {
@@ -305,7 +308,7 @@ export class Command {
           output: "touch: missing operand"
         }
       }
-      const path = `${Command.currentdir}/${args[0]}`;
+      const path = `${that.currentdir}/${args[0]}`;
       FileManager.createFile(path, "");
       return;
     } catch (e: any) {
@@ -316,7 +319,7 @@ export class Command {
     }
   }
 
-  static rm(args: string[]): OutputType {
+  static rm(that: CommandManager, args: string[]): OutputType {
     try {
       if (args.length === 0) {
         return {
@@ -324,7 +327,7 @@ export class Command {
           output: "rm: missing operand"
         }
       }
-      const path = `${Command.currentdir}/${args[0]}`;
+      const path = `${that.currentdir}/${args[0]}`;
       FileManager.delete(path);
       return;
     } catch (e: any) {
@@ -335,7 +338,7 @@ export class Command {
     }
   }
 
-  static cat(args: string[]): OutputType {
+  static cat(that: CommandManager, args: string[]): OutputType {
     try {
       if (args.length === 0) {
         return {
@@ -345,7 +348,7 @@ export class Command {
       }
       let path = args[0];
       if (!path.startsWith("/")) {
-        path = `${Command.currentdir}${path}`;
+        path = `${that.currentdir}${path}`;
       }
       const file = FileManager.getFile(path);
       if (file.type !== "file") {
@@ -366,7 +369,8 @@ export class Command {
     }
   }
 
-  static echo(args: string[]): OutputType {
+  // @ts-ignore
+  static echo(that: CommandManager, args: string[]): OutputType {
     const output = args.join(" ").replace(/"/g, "");
 
     return {
@@ -375,15 +379,16 @@ export class Command {
     }
   }
 
-  static help(): OutputType {
+  // @ts-ignore
+  static help(that: CommandManager,): OutputType {
     return {
       type: "standard",
-      output: Object.values(Command.commands).map((command) => command.help).join("\n")
+      output: Object.values(CommandManager.commands).map((command) => command.help).join("\n")
     }
   }
 
-  static clear(): OutputType {
-    EventManager.emit("clear", undefined);
+  static clear(that: CommandManager,): OutputType {
+    that.eventManager.emit("clear", undefined);
     return {
       type: "standard",
       output: ""

@@ -2,11 +2,10 @@ import {Prompt} from "../Prompt.tsx";
 import {useEffect, useRef, useState} from "react";
 import {PromptPrefix} from "../PromptPrefix.tsx";
 import {EventManager} from "../../services/EventManager.ts";
-import {Command, OutputType} from "../../services/Command.ts";
+import {CommandManager, OutputType} from "../../services/CommandManager.ts";
 
 
 export type PromptType = OutputType | CommandPrompt;
-
 
 export interface CommandPrompt {
   type: "command";
@@ -19,22 +18,27 @@ export interface CommandPrompt {
 
 function Terminal() {
   const [history, setHistory] = useState<PromptType[]>([])
-  const [user, setUser] = useState<string>(Command.getUser())
-  const [host, setHost] = useState<string>(Command.getHost())
-  const [currentdir, setCurrentdir] = useState<string>(Command.getCurrentDir())
+  const [user, setUser] = useState<string>("")
+  const [host, setHost] = useState<string>("")
+  const [currentdir, setCurrentdir] = useState<string>("")
   const terminalContainerRef = useRef<HTMLDivElement | null>(null);
+  const [commandManager] = useState(new CommandManager(new EventManager()));
 
   useEffect(() => {
-    EventManager.on("userChanged", (value: string) => {
+    setUser(commandManager.getUser())
+    setHost(commandManager.getHost())
+    setCurrentdir(commandManager.getCurrentDir())
+
+    commandManager.eventManager.on("userChanged", (value: string) => {
       setUser(value)
     });
-    EventManager.on("hostChanged", (value: string) => {
+    commandManager.eventManager.on("hostChanged", (value: string) => {
       setHost(value)
     });
-    EventManager.on("currentdirChanged", (value: string) => {
+    commandManager.eventManager.on("currentdirChanged", (value: string) => {
       setCurrentdir(value)
     });
-    EventManager.on("clear", () => {
+    commandManager.eventManager.on("clear", () => {
       setHistory([])
     });
   }, []);
@@ -49,7 +53,7 @@ function Terminal() {
       prompt,
     }])
 
-    const output = Command.exec(prompt);
+    const output = commandManager.exec(prompt);
     setHistory((prev) => [...prev, output])
   }
   const getPromptInHistory = (index: number) => {
@@ -66,10 +70,9 @@ function Terminal() {
 
   return (
     <div
-      className="w-full h-full flex flex-col overflow-y-scroll bg-slate-900 text-gray-200 font-mono shadow-lg"
+      className="h-full flex flex-col overflow-y-scroll text-gray-200 font-mono shadow-lg"
       ref={terminalContainerRef}
       id="terminal">
-
 
       <div className="px-2 pt-2">
         {

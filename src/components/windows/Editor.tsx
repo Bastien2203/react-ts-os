@@ -1,7 +1,10 @@
+import {Theme} from "../../services/Theme.ts";
 
 
 export const Editor = () => {
-  return <textarea className="bg-white w-full h-full text-black outline-0" >
+  return <textarea className="h-full w-full outline-0" style={{
+    backgroundColor: Theme.windowBackgroundColor
+  }} >
 
   </textarea>
 }
