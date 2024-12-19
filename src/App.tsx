@@ -1,58 +1,72 @@
-import {useEffect, useState} from "react";
-import {ActiveWindow, WindowManager} from "./services/WindowManager.ts";
-import {EventManager} from "./services/EventManager.ts";
+import {useContext, useEffect, useState} from "react";
+import {ActiveWindow} from "./services/WindowManager.ts";
 import {WindowLayout} from "./components/WindowLayout.tsx";
 import {Dock} from "./components/Dock.tsx";
 import React from "react";
+import {Desktop} from "./components/Desktop.tsx";
+import {useSettings} from "./hooks/useSettings.ts";
 import {WindowManagerContext} from "./WindowManagerContext.tsx";
-import {Theme} from "./services/Theme.ts";
 
 
 export const App = () => {
   const [activeWindows, setActiveWindows] = useState<ActiveWindow[]>([])
   const [focusedWindow, setFocusedWindow] = useState<ActiveWindow | null>(null)
-  const [windowManager] = useState(new WindowManager(new EventManager()))
+  const context = useContext(WindowManagerContext);
+  const [desktopBackground] = useSettings("appearance", "desktopBackgroundColor");
 
-  useEffect(() => {
-    setActiveWindows(windowManager.getActiveWindows())
-    windowManager.eventManager.on("windowAdded", (window: ActiveWindow) => {
-      setActiveWindows((prev) => [...prev, window])
-      setFocusedWindow(window)
-    });
-    windowManager.eventManager.on("windowRemoved", (id: string) => {
-      if (focusedWindow?.id === id) {
-        setFocusedWindow(null)
-      }
-      setActiveWindows((prev) => prev.filter((w) => w.id !== id))
-    });
-  }, []);
-
-  const closeWindow = (id: string) => {
-    windowManager.removeActiveWindow(id)
+  if(!context) {
+    return <>Loading...</>
   }
 
-  return <div className="h-screen w-screen bg-gradient-to-br flex" style={{background: Theme.desktopBackgroundColor}}>
-    <div className="h-full">
-      <Dock windowManager={windowManager}/>
+  useEffect(() => {
+    setActiveWindows(context.windowManager.getActiveWindows())
+
+    const onWindowAdded = (window: ActiveWindow) => {
+      setActiveWindows(context.windowManager.getActiveWindows());
+      setFocusedWindow(window);
+    };
+
+    const onWindowRemoved = (id: string) => {
+      if (focusedWindow?.id === id) {
+        setFocusedWindow(null);
+      }
+      setActiveWindows(context.windowManager.getActiveWindows());
+    };
+
+    context.windowManager.eventManager.on("windowAdded", onWindowAdded);
+    context.windowManager.eventManager.on("windowRemoved", onWindowRemoved);
+
+    return () => {
+      context.windowManager.eventManager.off("windowAdded", onWindowAdded);
+      context.windowManager.eventManager.off("windowRemoved", onWindowRemoved);
+    };
+  }, [context.windowManager, focusedWindow]);
+
+  const closeWindow = (id: string) => {
+    context.windowManager.removeActiveWindow(id)
+  }
+
+  return <div className="h-screen w-screen flex " style={{background: desktopBackground}}>
+    <div className="h-full z-40">
+      <Dock/>
     </div>
 
-    <WindowManagerContext.Provider value={{windowManager}}>
-      <div className="h-full w-full relative">
-        {
-          activeWindows.map((activeWindows) =>
-            (
-              <React.Fragment key={activeWindows.id}>
-                <WindowLayout title={activeWindows.title} closeWindow={() => closeWindow(activeWindows.id)}
-                              zIndex={focusedWindow?.id === activeWindows.id ? 1 : 0}
-                              setFocus={() => setFocusedWindow(activeWindows)}>
-                  {activeWindows.component && <activeWindows.component/>}
-                </WindowLayout>
-              </React.Fragment>
-            ))
-        }
-      </div>
-    </WindowManagerContext.Provider>
+    <div className="h-full w-full relative">
+      <Desktop/>
+      {
+        activeWindows.map((window) =>
+          (
+            <React.Fragment key={window.id}>
+              <WindowLayout title={window.title} closeWindow={() => closeWindow(window.id)}
+                            zIndex={focusedWindow?.id === window.id ? 1 : 0}
+                            setFocus={() => setFocusedWindow(window)}
+                            icon={<window.icon/>}>
 
-
+                {window.component && <window.component {...window.args}/>}
+              </WindowLayout>
+            </React.Fragment>
+          ))
+      }
+    </div>
   </div>
 }

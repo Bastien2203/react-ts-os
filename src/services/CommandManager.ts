@@ -165,7 +165,7 @@ export class CommandManager {
           const content = file.content;
           const isScript = content.startsWith("#!script");
           if (isScript) {
-            const scriptCommands = content.split(";").slice(1);
+            const scriptCommands = content.replace("\n", "").split(";").slice(1).filter((command) => command !== "");
             const outputs: OutputType = {
               type: "standard",
               output: ""

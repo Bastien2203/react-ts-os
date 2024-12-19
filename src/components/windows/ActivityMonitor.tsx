@@ -15,9 +15,8 @@ export const ActivityMonitor = () => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-900 text-gray-200 p-4 rounded-lg shadow-lg">
-      <h2 className="text-lg font-semibold mb-4 text-gray-50">Activity Monitor</h2>
-      <div className="flex flex-col gap-2 overflow-y-auto h-full py-5 border-t border-gray-700">
+    <div className="flex flex-col h-full p-4">
+      <div className="flex flex-col gap-2 overflow-y-auto h-full pb-5">
         {windows.length === 0 ? (
           <div className="text-center text-gray-400 py-4">No active windows</div>
         ) : (

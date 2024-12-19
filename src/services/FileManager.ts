@@ -13,6 +13,7 @@ export interface Directory {
 export type FileTree = { [key: string]: File | Directory };
 
 export class FileManager {
+
   private static fileSystem: FileTree = {
     ".": {
       type: "dir",
@@ -32,6 +33,28 @@ export class FileManager {
               content: "Hello Again",
               permissions: "rw-r--r--",
             },
+          },
+        },
+        "Desktop": {
+          type: "dir",
+          permissions: "rwxr-xr-x",
+          children: {
+            "testfile": {
+              type: "file",
+              content: "this is a test file",
+              permissions: "rw-r--r--",
+            },
+            "testdir": {
+              type: "dir",
+              permissions: "rwxr-xr-x",
+              children: {
+                "testfile2": {
+                  type: "file",
+                  content: "this is another test file",
+                  permissions: "rw-r--r--",
+                },
+              },
+            }
           },
         },
       },

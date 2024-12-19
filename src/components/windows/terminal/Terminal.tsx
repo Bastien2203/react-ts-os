@@ -1,8 +1,8 @@
-import {Prompt} from "../Prompt.tsx";
+import {Prompt} from "./Prompt.tsx";
 import {useEffect, useRef, useState} from "react";
-import {PromptPrefix} from "../PromptPrefix.tsx";
-import {EventManager} from "../../services/EventManager.ts";
-import {CommandManager, OutputType} from "../../services/CommandManager.ts";
+import {PromptPrefix} from "./PromptPrefix.tsx";
+import {EventManager} from "../../../services/EventManager.ts";
+import {CommandManager, OutputType} from "../../../services/CommandManager.ts";
 
 
 export type PromptType = OutputType | CommandPrompt;
@@ -63,7 +63,7 @@ function Terminal() {
 
   useEffect(() => {
     if (terminalContainerRef.current) {
-      terminalContainerRef.current.scrollTop = terminalContainerRef.current.scrollHeight;
+      terminalContainerRef.current.scrollTop = terminalContainerRef.current.scrollHeight + 1000;
     }
   }, [history]);
 

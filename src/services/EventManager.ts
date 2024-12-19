@@ -5,6 +5,12 @@ export class EventManager {
     this.listeners[event] = listener
   }
 
+  off(event: string, listener: Function) {
+    if (this.listeners[event] === listener) {
+      delete this.listeners[event]
+    }
+  }
+
   emit(event: string, ...args: any[]) {
     if (this.listeners[event]) {
       this.listeners[event](...args)
