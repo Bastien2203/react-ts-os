@@ -13,7 +13,7 @@ export const Dock = () => {
 
   return (
     <div
-      className="h-full bg-white/70 shadow-lg rounded-tr-lg rounded-br-lg"
+      className="h-full bg-white/70 shadow-lg rounded-tr-lg rounded-br-lg select-none"
       style={{
         backdropFilter: "blur(10px)",
       }}
